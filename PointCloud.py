@@ -191,6 +191,8 @@ class Cloud:
         cv2.createTrackbar("Body Cloud", self._configurations, 0, 1, self.nothing)
         cv2.createTrackbar("Skeleton Cloud", self._configurations, 0, 1, self.nothing)
         cv2.createTrackbar("Simultaneously", self._configurations, 0, 1, self.nothing)
+
+        cv2.createTrackbar("SAVE_PCL", self._configurations, 0, 1, self.nothing)
         # update the positions
         if self._color_point_cloud:
             cv2.setTrackbarPos("Color Cloud", self._configurations, 1)
@@ -368,6 +370,10 @@ class Cloud:
         body = cv2.getTrackbarPos("Body Cloud", self._configurations)
         skeleton = cv2.getTrackbarPos("Skeleton Cloud", self._configurations)
         simultaneously = cv2.getTrackbarPos("Simultaneously", self._configurations)
+        save_pcl = cv2.getTrackbarPos("SAVE_PCL", self._configurations)
+
+        
+
         self._color_point_cloud = True if color == 1 else False
         self._simultaneously_point_cloud = True if simultaneously == 1 else False
         self._depth_point_cloud = True if depth == 1 else False
@@ -408,7 +414,7 @@ class Cloud:
                 self._dynamic_point_cloud[:, 2] = self._world_points[:, 1] * 1000
                 # remove -inf (too slow)
                 # self._dynamic_point_cloud = self._dynamic_point_cloud[np.all(self._dynamic_point_cloud != float('-inf'), axis=1)]
-
+                # print(self._dynamic_point_cloud.shape)
                 # simultaneously point cloud
                 if self._simultaneously_point_cloud:
                     self._depth_point_cloud_points = self._dynamic_point_cloud
@@ -631,6 +637,10 @@ class Cloud:
             else:
                 self._start = False
         self._start = False
+
+        self.create_points()
+        self.export_to_ply()
+
         cv2.destroyAllWindows()  # destroy track bar window and close application
 
     def visualize_file(self):
@@ -641,13 +651,16 @@ class Cloud:
         import matplotlib.pyplot as plt
         self._w.close()  # close pyqtgraph window application
         QtGui.QApplication.quit()  # close pyqtgraph application
-        cv2.destroyAllWindows()
+        # cv2.destroyAllWindows()
+        print("haaaaaaa")
+        # print(os.path.join(self._dir_path, self._cloud_file))
         # Check if file exists
         if os.path.exists(os.path.join(self._dir_path, self._cloud_file)):
-            vis = o3d.Visualizer()  # start visualizer
+            print("wilala")
+            vis = o3d.visualization.Visualizer()  # start visualizer
             vis.create_window(width=768, height=432)  # init window
             # add file geometry
-            vis.add_geometry(o3d.read_point_cloud(os.path.join(self._dir_path, self._cloud_file)))
+            vis.add_geometry(o3d.io.read_point_cloud(os.path.join(self._dir_path, self._cloud_file)))
             opt = vis.get_render_option()  # get options
             opt.background_color = np.asarray([0, 0, 0])  # background to black
             view_control = vis.get_view_control()
@@ -662,10 +675,11 @@ class Cloud:
                 self.export_to_ply()
             if self._cloud_file[-4:] == '.pcd':
                 self.export_to_pcd()
-            vis = o3d.Visualizer()  # start visualizer
+            vis = o3d.visualization.Visualizer()  # start visualizer
             vis.create_window(width=768, height=432)  # init window
+
             # add file geometry
-            vis.add_geometry(o3d.read_point_cloud(os.path.join(self._dir_path, self._cloud_file)))
+            vis.add_geometry(o3d.io.read_point_cloud(os.path.join(self._dir_path, self._cloud_file)))
             opt = vis.get_render_option()  # get options
             opt.background_color = np.asarray([0, 0, 0])  # background to black
             view_control = vis.get_view_control()
@@ -673,8 +687,10 @@ class Cloud:
             vis.run()  # run visualization
             vis.destroy_window()  # destroy window after closing the point cloud
             sys.exit()  # exit the application
+        # cv2.destroyAllWindows()
 
     def export_to_ply(self):
+        print("export_to_ply")
         """
         Inspired by https://github.com/bponsler/kinectToPly
         Writes a kinect point cloud into a .ply file
@@ -785,7 +801,8 @@ if __name__ == "__main__":
     #  pcl = Cloud(dynamic=True, skeleton=True, color_overlay=False)
     # pcl.visualize()
     """
-    # You can also visualize the clouds simultaneously in any order, and apply the rgb frame color on top of them.s
+    # You can also visualize the clouds simultaneously in any order, 
+    and apply the rgb frame color on top of them.s
     """
     # pcl = Cloud(dynamic=True, simultaneously=True, color=True, depth=True, body=False, skeleton=False, color_overlay=True)
     # pcl.visualize()
@@ -793,5 +810,5 @@ if __name__ == "__main__":
     # pcl.visualize()
     # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=True, skeleton=False, color_overlay=False)
     # pcl.visualize()
-    pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True, color_overlay=True)
-    pcl.visualize()
+    # pcl = Cloud(dynamic=True, simultaneously=True, depth=True, color=False, body=False, skeleton=True, color_overlay=True)
+    # pcl.visualize()

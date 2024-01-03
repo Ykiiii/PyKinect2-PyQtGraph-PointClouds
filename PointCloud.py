@@ -19,6 +19,7 @@ import sys
 import os
 import ctypes
 import open3d as o3d
+import json,copy
 
 
 class Cloud:
@@ -32,7 +33,8 @@ class Cloud:
         depth: Flag for displaying the depth pointcloud dynamically
         body: Flag for displaying the body index pointcloud dynamically
         skeleton: Flag for displaying the skeleton index pointcloud dynamically
-        simultaneously: Flag for displaying more than one pointcloud dynamically (when one of the pointcloud is the skeleton you have to scroll out to see the pointcloud)
+        simultaneously: Flag for displaying more than one pointcloud dynamically
+         (when one of the pointcloud is the skeleton you have to scroll out to see the pointcloud)
         :return None
         """
         # Initialize Kinect object
@@ -370,7 +372,7 @@ class Cloud:
         body = cv2.getTrackbarPos("Body Cloud", self._configurations)
         skeleton = cv2.getTrackbarPos("Skeleton Cloud", self._configurations)
         simultaneously = cv2.getTrackbarPos("Simultaneously", self._configurations)
-        save_pcl = cv2.getTrackbarPos("SAVE_PCL", self._configurations)
+        self.save_pcl = cv2.getTrackbarPos("SAVE_PCL", self._configurations)
 
         
 
@@ -605,6 +607,21 @@ class Cloud:
         else:
             self._scatter.setGLOptions('additive')  # disables depth enables blending
 
+        if self.save_pcl:
+            print("save_pcl")
+            # 1
+            # data = self._dynamic_point_cloud
+            # 2 depth
+            data = np.column_stack((self._dynamic_point_cloud, self._color[:,:3]))            
+            data = data[np.all(data != float('-inf'), axis=1)]  # remove -inf
+
+            # print(data)
+            np.savetxt("a.txt", data, fmt="%f", delimiter=",")
+ 
+            time.sleep(1)
+            cv2.setTrackbarPos("SAVE_PCL", self._configurations, 0)
+
+
     def init(self):
         """
         Initialize PyQTGraph and add the constructed points
@@ -637,10 +654,6 @@ class Cloud:
             else:
                 self._start = False
         self._start = False
-
-        self.create_points()
-        self.export_to_ply()
-
         cv2.destroyAllWindows()  # destroy track bar window and close application
 
     def visualize_file(self):
@@ -702,6 +715,7 @@ class Cloud:
         # stack data
         data = np.column_stack((self._dynamic_point_cloud, self._color))
         data = data[np.all(data != float('-inf'), axis=1)]  # remove -inf
+
         # header format of ply file
         header_lines = ["ply",
                         "format ascii 1.0",
@@ -718,6 +732,7 @@ class Cloud:
         data = '\n'.join('{} {} {} {} {} {}'.format('%.2f' % x[0], '%.2f' % x[1], '%.2f' % x[2], int(x[3]), int(x[4]), int(x[5])) for x in data)
         header = '\n'.join(line for line in header_lines) + '\n'
         # write file
+        # file = open(os.path.join(self._dir_path, self._cloud_file), 'w')
         file = open(os.path.join(self._dir_path, self._cloud_file), 'w')
         file.write(header)
         file.write(data)
